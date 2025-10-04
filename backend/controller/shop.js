@@ -39,7 +39,7 @@ router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
 
     const activationToken = createActivationToken(seller);
 
-    const activationUrl = `https://eshop-tutorial-pyri.vercel.app/seller/activation/${activationToken}`;
+    const activationUrl = `http://localhost:3000/seller/activation/${activationToken}`;
 
     try {
       await sendMail({
@@ -76,7 +76,50 @@ router.post(
       const newSeller = jwt.verify(
         activation_token,
         process.env.ACTIVATION_SECRET
+      );router.post(
+  "/activation",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { activation_token } = req.body;
+
+      // ✅ Verify token
+      const newSeller = jwt.verify(
+        activation_token,
+        process.env.ACTIVATION_SECRET
       );
+
+      if (!newSeller) {
+        return next(new ErrorHandler("Invalid token", 400));
+      }
+
+      const { name, email, password, avatar, zipCode, address, phoneNumber } =
+        newSeller;
+
+      let seller = await Shop.findOne({ email });
+
+      if (seller) {
+        return next(new ErrorHandler("Shop already exists", 400));
+      }
+
+      // ✅ Create shop
+      seller = await Shop.create({
+        name,
+        email,
+        avatar,
+        password,
+        zipCode,
+        address,
+        phoneNumber,
+      });
+
+      // ✅ Send token after activation - Fixed variable name
+      sendShopToken(seller, 200, res);
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
 
       if (!newSeller) {
         return next(new ErrorHandler("Invalid token", 400));
@@ -106,6 +149,7 @@ router.post(
     }
   })
 );
+
 
 // login shop
 router.post(
