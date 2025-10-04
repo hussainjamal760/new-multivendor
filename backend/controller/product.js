@@ -74,6 +74,10 @@ router.get(
 );
 
 // delete product of a shop
+// In backend/controller/product.js
+// Replace the delete product route with this:
+
+// delete product of a shop
 router.delete(
   "/delete-shop-product/:id",
   isSeller,
@@ -85,13 +89,15 @@ router.delete(
         return next(new ErrorHandler("Product is not found with this id", 404));
       }    
 
-      for (let i = 0; 1 < product.images.length; i++) {
-        const result = await cloudinary.v2.uploader.destroy(
+      // ✅ Fixed: Changed loop condition from '1 <' to 'i <'
+      for (let i = 0; i < product.images.length; i++) {
+        await cloudinary.v2.uploader.destroy(
           product.images[i].public_id
         );
       }
     
-      await product.remove();
+      // ✅ Use deleteOne() instead of remove() (deprecated in newer Mongoose)
+      await product.deleteOne();
 
       res.status(201).json({
         success: true,
@@ -197,3 +203,5 @@ router.get(
   })
 );
 module.exports = router;
+
+

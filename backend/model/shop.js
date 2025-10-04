@@ -83,11 +83,11 @@ const shopSchema = new mongoose.Schema({
 // Hash password
 shopSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
-    next();
+    return next(); // ✅ Add return
   }
   this.password = await bcrypt.hash(this.password, 10);
+  next(); // ✅ Call next after hashing
 });
-
 // jwt token
 shopSchema.methods.getJwtToken = function () {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {

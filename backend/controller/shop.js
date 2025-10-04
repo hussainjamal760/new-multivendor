@@ -23,7 +23,6 @@ router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
       folder: "avatars",
     });
 
-
     const seller = {
       name: req.body.name,
       email: email,
@@ -62,94 +61,104 @@ router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
 // create activation token
 const createActivationToken = (seller) => {
   return jwt.sign(seller, process.env.ACTIVATION_SECRET, {
-    expiresIn: "5m",
+    expiresIn: "24h",
   });
 };
 
-// activate user
+// activate shop - WITH DEBUG LOGGING
 router.post(
   "/activation",
   catchAsyncErrors(async (req, res, next) => {
     try {
+      console.log("=== ACTIVATION ROUTE HIT ===");
+      console.log("1. Request body:", req.body);
+      
       const { activation_token } = req.body;
+      
+      if (!activation_token) {
+        console.log("ERROR: No activation token provided");
+        return next(new ErrorHandler("No activation token provided", 400));
+      }
+      
+      console.log("2. Token received, verifying...");
 
-      const newSeller = jwt.verify(
-        activation_token,
-        process.env.ACTIVATION_SECRET
-      );router.post(
-  "/activation",
-  catchAsyncErrors(async (req, res, next) => {
-    try {
-      const { activation_token } = req.body;
+      // Check if ACTIVATION_SECRET exists
+      if (!process.env.ACTIVATION_SECRET) {
+        console.log("ERROR: ACTIVATION_SECRET not found in environment");
+        return next(new ErrorHandler("Server configuration error", 500));
+      }
 
-      // ✅ Verify token
       const newSeller = jwt.verify(
         activation_token,
         process.env.ACTIVATION_SECRET
       );
+      
+      console.log("3. Token verified successfully");
+      console.log("   Seller email:", newSeller.email);
+      console.log("   Seller name:", newSeller.name);
 
       if (!newSeller) {
+        console.log("ERROR: Token verification returned null");
         return next(new ErrorHandler("Invalid token", 400));
       }
-
+      
       const { name, email, password, avatar, zipCode, address, phoneNumber } =
         newSeller;
 
+      console.log("4. Checking if seller already exists...");
       let seller = await Shop.findOne({ email });
 
       if (seller) {
+        console.log("ERROR: Shop already exists with email:", email);
         return next(new ErrorHandler("Shop already exists", 400));
       }
 
-      // ✅ Create shop
-      seller = await Shop.create({
+      console.log("5. Creating new shop...");
+      console.log("   Data:", {
         name,
         email,
-        avatar,
-        password,
+        hasPassword: !!password,
+        hasAvatar: !!avatar,
         zipCode,
         address,
-        phoneNumber,
+        phoneNumber
       });
-
-      // ✅ Send token after activation - Fixed variable name
-      sendShopToken(seller, 200, res);
-    } catch (error) {
-      return next(new ErrorHandler(error.message, 500));
-    }
-  })
-);
-
-
-      if (!newSeller) {
-        return next(new ErrorHandler("Invalid token", 400));
-      }
-      const { name, email, password, avatar, zipCode, address, phoneNumber } =
-        newSeller;
-
-      let seller = await Shop.findOne({ email });
-
-      if (seller) {
-        return next(new ErrorHandler("User already exists", 400));
-      }
 
       seller = await Shop.create({
         name,
         email,
         avatar,
         password,
-        zipCode,
+        zipCode: Number(zipCode), // ✅ Convert to Number
         address,
-        phoneNumber,
+        phoneNumber: Number(phoneNumber), // ✅ Convert to Number
       });
+      
+      console.log("6. Shop created successfully!");
+      console.log("   Shop ID:", seller._id);
 
+      console.log("7. Sending shop token...");
       sendShopToken(seller, 201, res);
+      console.log("8. Token sent successfully");
+      
     } catch (error) {
+      console.error("=== ACTIVATION ERROR ===");
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Full error:", error);
+      console.error("Stack:", error.stack);
+      
+      if (error.name === 'JsonWebTokenError') {
+        return next(new ErrorHandler("Invalid activation token", 400));
+      }
+      if (error.name === 'TokenExpiredError') {
+        return next(new ErrorHandler("Activation token has expired", 400));
+      }
+      
       return next(new ErrorHandler(error.message, 500));
     }
   })
 );
-
 
 // login shop
 router.post(
@@ -250,26 +259,25 @@ router.put(
     try {
       let existsSeller = await Shop.findById(req.seller._id);
 
-        const imageId = existsSeller.avatar.public_id;
+      const imageId = existsSeller.avatar.public_id;
 
-        await cloudinary.v2.uploader.destroy(imageId);
+      await cloudinary.v2.uploader.destroy(imageId);
 
-        const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-          folder: "avatars",
-          width: 150,
-        });
+      const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+        folder: "avatars",
+        width: 150,
+      });
 
-        existsSeller.avatar = {
-          public_id: myCloud.public_id,
-          url: myCloud.secure_url,
-        };
+      existsSeller.avatar = {
+        public_id: myCloud.public_id,
+        url: myCloud.secure_url,
+      };
 
-  
       await existsSeller.save();
 
       res.status(200).json({
         success: true,
-        seller:existsSeller,
+        seller: existsSeller,
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));

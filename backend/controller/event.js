@@ -7,7 +7,7 @@ const { isSeller, isAdmin, isAuthenticated } = require("../middleware/auth");
 const router = express.Router();
 const cloudinary = require("cloudinary");
 
-// create event
+// create event  
 router.post(
   "/create-event",
   catchAsyncErrors(async (req, res, next) => {
@@ -92,17 +92,20 @@ router.delete(
     try {
       const event = await Event.findById(req.params.id);
 
-      if (!product) {
-        return next(new ErrorHandler("Product is not found with this id", 404));
+      // ✅ Fixed: Changed 'product' to 'event'
+      if (!event) {
+        return next(new ErrorHandler("Event is not found with this id", 404));
       }    
 
-      for (let i = 0; 1 < product.images.length; i++) {
-        const result = await cloudinary.v2.uploader.destroy(
+      // ✅ Fixed: Changed loop condition and variable names
+      for (let i = 0; i < event.images.length; i++) {
+        await cloudinary.v2.uploader.destroy(
           event.images[i].public_id
         );
       }
     
-      await event.remove();
+      // ✅ Use deleteOne() instead of remove() (deprecated)
+      await event.deleteOne();
 
       res.status(201).json({
         success: true,
