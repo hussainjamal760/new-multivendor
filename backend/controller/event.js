@@ -7,9 +7,10 @@ const { isSeller, isAdmin, isAuthenticated } = require("../middleware/auth");
 const router = express.Router();
 const cloudinary = require("cloudinary");
 
-// create event  
+// create event - ✅ Added isSeller middleware
 router.post(
   "/create-event",
+  isSeller,
   catchAsyncErrors(async (req, res, next) => {
     try {
       const shopId = req.body.shopId;
@@ -85,26 +86,24 @@ router.get(
   })
 );
 
-// delete event of a shop
+// delete event of a shop - ✅ Added isSeller middleware
 router.delete(
   "/delete-shop-event/:id",
+  isSeller,
   catchAsyncErrors(async (req, res, next) => {
     try {
       const event = await Event.findById(req.params.id);
 
-      // ✅ Fixed: Changed 'product' to 'event'
       if (!event) {
         return next(new ErrorHandler("Event is not found with this id", 404));
       }    
 
-      // ✅ Fixed: Changed loop condition and variable names
       for (let i = 0; i < event.images.length; i++) {
         await cloudinary.v2.uploader.destroy(
           event.images[i].public_id
         );
       }
     
-      // ✅ Use deleteOne() instead of remove() (deprecated)
       await event.deleteOne();
 
       res.status(201).json({

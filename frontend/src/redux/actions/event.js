@@ -2,18 +2,24 @@ import axios from "axios";
 import { server } from "../../server";
 
 // create event
-export const createevent = (data) => async (dispatch) => {
+export const createevent = (newForm) => async (dispatch) => {
   try {
     dispatch({
       type: "eventCreateRequest",
     });
 
-    // ✅ Fixed: Changed 'd' to 'data' in destructuring
-    const { data: responseData } = await axios.post(`${server}/event/create-event`, data);
+    // ✅ Fixed: Properly send data in request body
+    const { data } = await axios.post(
+      `${server}/event/create-event`, 
+      newForm,
+      {
+        withCredentials: true,
+      }
+    );
     
     dispatch({
       type: "eventCreateSuccess",
-      payload: responseData.event,
+      payload: data.event,
     });
   } catch (error) {
     dispatch({
