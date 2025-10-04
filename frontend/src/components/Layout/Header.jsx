@@ -55,14 +55,16 @@ const Header = ({ activeHeading }) => {
     <>
       <div className={`${styles.section}`}>
         <div className="hidden 800px:h-[50px] 800px:my-[20px] 800px:flex items-center justify-between">
-          <div>
-            <Link to="/">
-              <img
-                src="https://shopo.quomodothemes.website/assets/images/logo.svg"
-                alt=""
-              />
-            </Link>
-          </div>
+  <div className="flex items-center">
+    <Link to="/">
+      <img
+        src="main.png"
+        alt="Logo"
+        className="h-[139px]  w-auto object-contain" 
+      />
+    </Link>
+  </div>
+
           {/* search box */}
           <div className="w-[50%] relative">
             <input

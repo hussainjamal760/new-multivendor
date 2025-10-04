@@ -11,16 +11,17 @@ const DashboardHeader = () => {
   return (
     <div className="w-full h-[80px] bg-white shadow sticky top-0 left-0 z-30 flex items-center justify-between px-4">
       <div>
-        <Link to="/dashboard">
-          <img
-            src="https://shopo.quomodothemes.website/assets/images/logo.svg"
-            alt=""
-          />
-        </Link>
+ <Link to="/">
+       <img
+         src="main.png"
+         alt="Logo"
+         className="h-[139px]  w-auto object-contain" 
+       />
+     </Link>
       </div>
       <div className="flex items-center">
         <div className="flex items-center mr-4">
-          <Link to="/dashboard/cupouns" className="800px:block hidden">
+          <Link to="/dashboard-coupouns" className="800px:block hidden">
             <AiOutlineGift
               color="#555"
               size={30}
